@@ -89,7 +89,7 @@
 
 <script src="node_modules/waveform-data/dist/waveform-data.js"></script>
 <script src="node_modules/waveform-data/dist/webaudio.js"></script>
-<script src="webaudio-peaks.js"></script>
+<script src="node_modules/webaudio-peaks/dist/webaudio-peaks.umd.js"></script>
 <script src="peaks.js"></script>
 <script>
   (function (Peaks) {
@@ -118,11 +118,12 @@
       const inputBuffer = audioProcessEvent.inputBuffer;
       // pcm is ArrayBuffer
       const channelData = inputBuffer.getChannelData(0);
-      const pcm = channelData.buffer;
+//      const pcm = channelData.buffer;
 //      console.log('sample rate;length;channels;buffer byte length;duration are ' + inputBuffer.sampleRate + ';' + inputBuffer.length + ';' + inputBuffer.numberOfChannels + ';' + pcm.byteLength + ';' + inputBuffer.duration);
 //      console.log('pcm:' + new Float32Array(pcm));
-      const peaks = extractPeaks(channelData, 512, 8);
-      console.log("peaks: " + peaks);
+//      console.log("peaks: " + extractPeaks(channelData, 512, 8));
+      const peaks = webaudioPeaks(channelData, 512, 8);
+      console.log("peaks: " + peaks.length + ";" + peaks.data[0]);
 //      var temporaryBuffer = new Float32Array(inputBuffer.length);
 //      inputBuffer.copyFromChannel(temporaryBuffer, 0, 0);
       // do this so that audio still plays
@@ -187,11 +188,11 @@
     var options = {
       container: document.getElementById('first-waveform-visualiser-container'),
       mediaElement: document.querySelector('audio'),
-      /*dataUri: {
-       arraybuffer: '/audio/faatihah-13-secs-512p.dat',
-       json: '/audio/faatihah-13-secs-512p.json'
-       }, */
-      audioContext: audioContext,
+      dataUri: {
+        /*arraybuffer: '/audio/faatihah-13-secs-512p.dat',*/
+        json: 'peaks.json'
+      },
+//      audioContext: audioContext,
       keyboard: false,
       zoomLevels: [512, 1024, 2048, 4096]
     };
