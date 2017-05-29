@@ -90,6 +90,7 @@
 <script src="node_modules/waveform-data/dist/waveform-data.js"></script>
 <script src="node_modules/waveform-data/dist/webaudio.js"></script>
 <script src="node_modules/webaudio-peaks/dist/webaudio-peaks.umd.js"></script>
+<script src="node_modules/eventemitter2/lib/eventemitter2.js"></script>
 <script src="peaks.js"></script>
 <script>
   (function (Peaks) {
@@ -102,8 +103,33 @@
     const scriptSource = audioContext.createMediaElementSource(audioElement);
     const analyser = audioContext.createAnalyser();
     const scriptProcessor = audioContext.createScriptProcessor();
+    var peaksInstance;
     // connect the audio to speaker
     audioSource.connect(audioContext.destination);
+    const ee = new EventEmitter2();
+
+    var options = {
+      container: document.getElementById('first-waveform-visualiser-container'),
+      mediaElement: document.querySelector('audio'),
+      dataUri: {
+        // TODO generate blob data of current waveform and use URL.createObjectURL to generate the url
+        json: 'peaks.json'
+      },
+//      audioContext: audioContext,
+      keyboard: false/*,
+       zoomLevels: [512, 1024, 2048, 4096]*/
+    };
+
+    ee.on('peaks.reinit', function (options) {
+      console.log("about to re-init")
+      peaksInstance.destroy();
+      peaksInstance = Peaks.init(options);
+      console.log('peaks instance re-initialized');
+    });
+
+    setTimeout(function () {
+      ee.emit('peaks.reinit', options);
+    }, 3000);
 
     const processedWaveform = function (error, waveform) {
       if (error)
@@ -185,21 +211,21 @@
 //      stopDataRequest();
 //      disconnectAnalysers();
     };
-    var options = {
-      container: document.getElementById('first-waveform-visualiser-container'),
-      mediaElement: document.querySelector('audio'),
-      dataUri: {
-        /*arraybuffer: '/audio/faatihah-13-secs-512p.dat',*/
-        json: 'peaks.json'
-      },
-//      audioContext: audioContext,
-      keyboard: false,
-      zoomLevels: [512, 1024, 2048, 4096]
-    };
 
-    var peaksInstance = Peaks.init(options);
-    peaksInstance.zoom.setZoom(0);
+    peaksInstance = Peaks.init(options);
 
+    // schedule a init-destroy cycle at specific interval
+    // generate the json into local storage url
+//    peaksInstance.zoom.setZoom(0);
+
+//    setTimeout(function () {
+//      peaksInstance.destroy();
+//      console.log("peaks instance destroyed");
+//      setTimeout(function () {
+//        peaksInstance = Peaks.init(options);
+//        console.log("peaks instance reinitialized")
+//      }, 3000);
+//    }, 3000);
 
     document.querySelector('[data-action="zoom-in"]').addEventListener("click", peaksInstance.zoom.zoomIn.bind(peaksInstance));
     document.querySelector('[data-action="zoom-out"]').addEventListener("click", peaksInstance.zoom.zoomOut.bind(peaksInstance));
