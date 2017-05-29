@@ -97,6 +97,7 @@
     "eventemitter2": "^4.1.0",
     "konva": "^1.6.1",
     "waveform-data": "^2.0.1",
-    "web-audio-engine": "^0.13.2"
+    "web-audio-engine": "^0.13.2",
+    "webaudio-peaks": "0.0.6"
   }
 }

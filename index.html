@@ -71,9 +71,12 @@
 
 <div id="demo-controls">
   <audio controls=controls id="audio" crossorigin="anonymous">
+    <!--<source src="http://icecast.local:8000/audio.ogg" type="audio/ogg">-->
+    <!--https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types-->
     <!--<source src="/test_data/TOL_6min_720p_download.mp3" type="audio/mpeg">-->
-    <source src="http://icecast.local:8000/audio.ogg" type="audio/ogg">
-    <source src="test_data/sample.ogg" type="audio/ogg">
+    <!--<source src="test_data/button.mp3" type="audio/mpeg">-->
+    <!--<source src="test_data/bells.mp3" type="audio/mpeg">-->
+    <source src="audio/faatihah-13-secs.mp3" type="audio/mpeg">
     Your browser does not support the audio element.
   </audio>
 
@@ -86,6 +89,7 @@
 
 <script src="node_modules/waveform-data/dist/waveform-data.js"></script>
 <script src="node_modules/waveform-data/dist/webaudio.js"></script>
+<script src="webaudio-peaks.js"></script>
 <script src="peaks.js"></script>
 <script>
   (function (Peaks) {
@@ -93,15 +97,13 @@
     const webAudioBuilder = window.WaveformDataWebaudioBuilder;
     const audioContext = new AudioContext();
     const audioElement = document.getElementById('audio');
-    const backupAudioSource = audioContext.createMediaElementSource(audioElement);
     const audioSource = audioContext.createMediaElementSource(audioElement);
+    const analyserSource = audioContext.createMediaElementSource(audioElement);
+    const scriptSource = audioContext.createMediaElementSource(audioElement);
     const analyser = audioContext.createAnalyser();
-    const scriptProcessor = audioContext.createScriptProcessor(16384, 1, 1);
-    backupAudioSource.connect(audioContext.destination);
-    // Bind our analyser to the media element source.
-//    audioSrc.connect(analyser);
-//    audioSrc.connect(audioContext.destination);
-
+    const scriptProcessor = audioContext.createScriptProcessor();
+    // connect the audio to speaker
+    audioSource.connect(audioContext.destination);
 
     const processedWaveform = function (error, waveform) {
       if (error)
@@ -109,16 +111,22 @@
       else
         console.log(waveform.duration);
     };
+    var connected = false;
 
     scriptProcessor.onaudioprocess = function (audioProcessEvent) {
       // inputBuffer is AudioBuffer
       const inputBuffer = audioProcessEvent.inputBuffer;
       // pcm is ArrayBuffer
-      const pcm = inputBuffer.getChannelData(0).buffer;
-      var temporaryBuffer = new Float32Array(inputBuffer.length);
-      inputBuffer.copyFromChannel(temporaryBuffer, 0, 0);
+      const channelData = inputBuffer.getChannelData(0);
+      const pcm = channelData.buffer;
+//      console.log('sample rate;length;channels;buffer byte length;duration are ' + inputBuffer.sampleRate + ';' + inputBuffer.length + ';' + inputBuffer.numberOfChannels + ';' + pcm.byteLength + ';' + inputBuffer.duration);
+//      console.log('pcm:' + new Float32Array(pcm));
+      const peaks = extractPeaks(channelData, 512, 8);
+      console.log("peaks: " + peaks);
+//      var temporaryBuffer = new Float32Array(inputBuffer.length);
+//      inputBuffer.copyFromChannel(temporaryBuffer, 0, 0);
       // do this so that audio still plays
-      audioProcessEvent.outputBuffer.copyToChannel(temporaryBuffer, 0, 0);
+//      audioProcessEvent.outputBuffer.copyToChannel(temporaryBuffer, 0, 0);
 //      const output = audioProcessEvent.outputBuffer.getChannelData(0);
 //      buffer.map(function (i, value) {
 //        output[i] = value;
@@ -130,10 +138,14 @@
 
     };
 
-    audioSource.connect(scriptProcessor);
-//    scriptProcessor.connect(audioContext.destination);
-
-//    audioSrc.connect(audioContext.destination);
+    function connectAnalysers() {
+      if (connected) return;
+      // bind our analyser to the media element source.
+//      analyserSource.connect(analyser);
+      scriptSource.connect(scriptProcessor);
+      console.log('Audio ready to be analysed.');
+      connected = true;
+    }
 
     var requestAnimationFrameId;
 
@@ -145,30 +157,48 @@
       dataArray.map(function (i, value) {
         buffer[i] = value;
       });
-      webAudioBuilder(audioContext, buffer, processedWaveform);
+//      webAudioBuilder(audioContext, buffer, processedWaveform);
 //      var waveForm = WaveformData.create(buffer);
       console.log('data array: ' + dataArray);
     };
+
+    function disconnectAnalysers() {
+      scriptSource.disconnect();
+//      analyserSource.disconnect();
+    };
+
     audioElement.onplay = function () {
 //      getData();
+      connectAnalysers();
     };
     function stopDataRequest() {
-      cancelAnimationFrame(requestAnimationFrameId);
+//      cancelAnimationFrame(requestAnimationFrameId);
+      disconnectAnalysers();
     };
+
     audioElement.onended = function () {
 //      stopDataRequest();
+      disconnectAnalysers();
     };
     audioElement.onpause = function () {
 //      stopDataRequest();
+//      disconnectAnalysers();
     };
     var options = {
       container: document.getElementById('first-waveform-visualiser-container'),
       mediaElement: document.querySelector('audio'),
+      /*dataUri: {
+       arraybuffer: '/audio/faatihah-13-secs-512p.dat',
+       json: '/audio/faatihah-13-secs-512p.json'
+       }, */
       audioContext: audioContext,
-      keyboard: false
+      keyboard: false,
+      zoomLevels: [512, 1024, 2048, 4096]
     };
 
     var peaksInstance = Peaks.init(options);
+    peaksInstance.zoom.setZoom(0);
+
 
     document.querySelector('[data-action="zoom-in"]').addEventListener("click", peaksInstance.zoom.zoomIn.bind(peaksInstance));
     document.querySelector('[data-action="zoom-out"]').addEventListener("click", peaksInstance.zoom.zoomOut.bind(peaksInstance));
