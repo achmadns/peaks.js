@@ -11,7 +11,8 @@
     "test_data"
   ],
   "dependencies": {
-    "requirejs": "~2.1.14"
+    "requirejs": "~2.1.14",
+    "stomp-websocket": "^2.3.4"
   },
   "devDependencies": {}
 }

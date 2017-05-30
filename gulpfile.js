@@ -66,7 +66,7 @@ gulp.task('serve', function() {
       baseDir: './'
     }
   });
-  gulp.watch(['*.html', 'peaks.js', '*.json']).on('change', reload);
+  gulp.watch(['*.html', 'peaks.js']).on('change', reload);
 });
 
 gulp.task('default', function(cb) {
